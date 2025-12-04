@@ -1,0 +1,35 @@
+# 编译产物
+bin/
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试产物
+*.test
+*.out
+coverage.txt
+
+# 依赖
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 环境配置
+.env
+
+# 日志
+*.log
+
+# macOS
+.DS_Store
+
+
+docs/**
+.env
