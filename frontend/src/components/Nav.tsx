@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/hooks/useToast'
 import { Login } from './Login'
 import { Register } from './Register'
 import { AvatarUpload } from './AvatarUpload'
@@ -43,10 +44,12 @@ function UserPopover({
   user,
   onLogout,
   onAvatarClick,
+  toast,
 }: {
   user: { user: string; avatar?: string }
   onLogout: () => void
   onAvatarClick: () => void
+  toast: ReturnType<typeof useToast>
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -66,7 +69,7 @@ function UserPopover({
       await onLogout()
       window.location.reload()
     } catch {
-      alert('退出失败')
+      toast.error('退出失败')
     }
   }
 
@@ -106,6 +109,7 @@ function UserPopover({
 
 export function Nav() {
   const { user, isLoggedIn, logout } = useAuth()
+  const toast = useToast()
   const [showLogin, setShowLogin] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
   const [showAvatar, setShowAvatar] = useState(false)
@@ -124,7 +128,7 @@ export function Nav() {
           </ul>
           <div className="flex items-center gap-2">
             {isLoggedIn && user ? (
-              <UserPopover user={user} onLogout={logout} onAvatarClick={() => setShowAvatar(true)} />
+              <UserPopover user={user} onLogout={logout} onAvatarClick={() => setShowAvatar(true)} toast={toast} />
             ) : (
               <>
                 <button

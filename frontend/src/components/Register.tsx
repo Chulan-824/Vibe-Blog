@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import { Modal } from './ui/Modal'
 import { useAuth, useVCode } from '@/hooks/useAuth'
+import { sanitizeSvg } from '@/lib/sanitize'
 
 interface RegisterProps {
   open: boolean
@@ -175,7 +176,7 @@ export function Register({ open, onClose, onSwitchToLogin }: RegisterProps) {
             />
             <div
               className="h-10 w-24 flex items-center justify-center"
-              dangerouslySetInnerHTML={{ __html: vcode?.data || 'loading...' }}
+              dangerouslySetInnerHTML={{ __html: vcode?.data ? sanitizeSvg(vcode.data) : 'loading...' }}
             />
             <button
               type="button"

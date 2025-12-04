@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMessageList, commitChildMessage } from '@/api/message'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/hooks/useToast'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { sanitizeHtml } from '@/lib/sanitize'
 import type { Message } from '@/types/message'
 
 function formatTime(dateStr: string) {
@@ -19,9 +22,9 @@ interface ReplyState {
 
 export function MessageList() {
   const { user, isLoggedIn } = useAuth()
+  const toast = useToast()
   const [limit, setLimit] = useState(5)
   const [replyState, setReplyState] = useState<ReplyState | null>(null)
-  const loadingRef = useRef(false)
 
   const { data: messagesData, refetch } = useQuery({
     queryKey: ['messages', limit],
@@ -30,25 +33,14 @@ export function MessageList() {
 
   const messages: Message[] = messagesData?.data || []
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (loadingRef.current) return
-      const scrollTop = document.documentElement.scrollTop
-      const clientHeight = document.documentElement.clientHeight
-      const scrollHeight = document.documentElement.scrollHeight
-
-      if (scrollTop + clientHeight >= scrollHeight - 200) {
-        loadingRef.current = true
-        setLimit((prev) => prev + 5)
-        setTimeout(() => {
-          loadingRef.current = false
-        }, 500)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+  const handleLoadMore = useCallback(() => {
+    setLimit((prev) => prev + 5)
   }, [])
+
+  useInfiniteScroll({
+    onLoadMore: handleLoadMore,
+    threshold: 200,
+  })
 
   const handleReplyClick = (parentIndex: number, childIndex?: number) => {
     const msg = messages[parentIndex]
@@ -69,7 +61,7 @@ export function MessageList() {
 
   const handleChildSubmit = async (parentIndex: number) => {
     if (!isLoggedIn || !user) {
-      alert('请先登录')
+      toast.error('请先登录')
       return
     }
     if (!replyState?.content.trim()) return
@@ -83,14 +75,14 @@ export function MessageList() {
         reUser: replyState.reUser,
       })
       if (res.code) {
-        alert(res.msg || '评论失败')
+        toast.error(res.msg || '评论失败')
       } else {
-        alert('评论成功')
+        toast.success('评论成功')
         setReplyState(null)
         refetch()
       }
     } catch {
-      alert('服务器错误~请稍后再试')
+      toast.error('服务器错误~请稍后再试')
     }
   }
 
@@ -115,7 +107,7 @@ export function MessageList() {
               <div className="text-[#01aaed]">{item.user?.user}</div>
               <div
                 className="min-h-8 break-all py-1 text-xs"
-                dangerouslySetInnerHTML={{ __html: item.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.content) }}
               />
               <div className="text-xs text-gray-500">
                 <span className="px-4">{formatTime(item.date)}</span>

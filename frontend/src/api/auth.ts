@@ -1,26 +1,33 @@
 import { request } from './index'
-import type { LoginParams, RegisterParams, User } from '@/types/auth'
+import type {
+  LoginParams,
+  RegisterParams,
+  LoginResponse,
+  RegisterResponse,
+  VCodeResponse,
+} from '@/types/auth'
+import type { ApiResponse } from '@/types/api'
 
 export const login = (params: LoginParams) => {
-  return request<User>('/login', { method: 'POST', body: params })
+  return request<LoginResponse>('/login', { method: 'POST', body: params })
 }
 
 export const checkLogin = () => {
-  return request<User>('/login/ifLogin', { method: 'POST' })
+  return request<LoginResponse>('/login/ifLogin', { method: 'POST' })
 }
 
 export const logout = () => {
-  return request('/login/logout', { method: 'POST' })
+  return request<ApiResponse>('/login/logout', { method: 'POST' })
 }
 
 export const register = (params: RegisterParams) => {
-  return request('/register', { method: 'POST', body: params })
+  return request<RegisterResponse>('/register', { method: 'POST', body: params })
 }
 
 export const getVCode = () => {
-  return request('/register/vcode', { method: 'POST' })
+  return request<VCodeResponse>('/register/vcode', { method: 'POST' })
 }
 
 export const checkVCode = (svgCode: string) => {
-  return request('/register/checkVcode', { method: 'POST', body: { svgCode } })
+  return request<ApiResponse>('/register/checkVcode', { method: 'POST', body: { svgCode } })
 }

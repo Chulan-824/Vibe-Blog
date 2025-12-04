@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { commitMessage } from '@/api/message'
 import { MessageInput, MessageList } from '@/components/message'
+import { useToast } from '@/hooks/useToast'
 
 export const Route = createFileRoute('/message')({
   component: Message,
@@ -9,19 +10,20 @@ export const Route = createFileRoute('/message')({
 
 function Message() {
   const { user, isLoggedIn } = useAuth()
+  const toast = useToast()
 
   const handleSubmit = async (content: string) => {
     if (!isLoggedIn || !user) {
-      alert('请先登录')
+      toast.error('请先登录')
       return
     }
 
     try {
       await commitMessage({ user: user._id, content })
-      alert('留言成功')
+      toast.success('留言成功')
       window.location.reload()
     } catch {
-      alert('服务器错误~请稍后再试')
+      toast.error('服务器错误~请稍后再试')
     }
   }
 
