@@ -11,15 +11,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// ========== 类型定义 ==========
+
 type UserDAO struct {
 	collection *mongo.Collection
 }
+
+// ========== 构造函数 ==========
 
 func NewUserDAO() *UserDAO {
 	return &UserDAO{
 		collection: database.Collection("users"),
 	}
 }
+
+// ========== DAO 方法 ==========
 
 func (d *UserDAO) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User

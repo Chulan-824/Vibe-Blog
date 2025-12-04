@@ -1,38 +1,79 @@
 package handler
 
 import (
-	"backend/internal/dao"
 	"backend/internal/service"
+	"context"
 	"regexp"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type AuthHandler struct {
-	authService    *service.AuthService
-	captchaService *service.CaptchaService
-	visitorDAO     *dao.VisitorDAO
-	userDAO        *dao.UserDAO
-}
-
-func NewAuthHandler() *AuthHandler {
-	return &AuthHandler{
-		authService:    service.NewAuthService(),
-		captchaService: service.GetCaptchaService(),
-		visitorDAO:     dao.NewVisitorDAO(),
-		userDAO:        dao.NewUserDAO(),
-	}
-}
+// ========== 常量 ==========
 
 var (
 	userRegex = regexp.MustCompile(`^[\w\p{Han}\p{Hangul}\x{0800}-\x{4e00}\-]{2,7}$`)
 	pwdRegex  = regexp.MustCompile(`^[\w<>,.?|;':"{}!@#$%^&*()/\-\[\]\\]{6,18}$`)
 )
 
+// ========== 类型定义 ==========
+
+type AuthHandler struct {
+	authService    service.AuthServiceInterface
+	captchaService service.CaptchaServiceInterface
+	visitorService service.VisitorServiceInterface
+}
+
 type LoginRequest struct {
 	UserName string `json:"user_name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RegisterRequest struct {
+	UserName    string `json:"user_name" binding:"required"`
+	Password    string `json:"password" binding:"required"`
+	CaptchaCode string `json:"captcha_code" binding:"required"`
+	CaptchaID   string `json:"captcha_id" binding:"required"`
+}
+
+type CheckCaptchaRequest struct {
+	CaptchaCode string `json:"captcha_code" binding:"required"`
+	CaptchaID   string `json:"captcha_id" binding:"required"`
+}
+
+// ========== 构造函数 ==========
+
+func NewAuthHandler() *AuthHandler {
+	return &AuthHandler{
+		authService:    service.NewAuthService(),
+		captchaService: service.GetCaptchaService(),
+		visitorService: service.NewVisitorService(),
+	}
+}
+
+// NewAuthHandlerWithServices 使用指定的 Service 创建 Handler（用于测试）
+func NewAuthHandlerWithServices(
+	authSvc service.AuthServiceInterface,
+	captchaSvc service.CaptchaServiceInterface,
+	visitorSvc service.VisitorServiceInterface,
+) *AuthHandler {
+	return &AuthHandler{
+		authService:    authSvc,
+		captchaService: captchaSvc,
+		visitorService: visitorSvc,
+	}
+}
+
+// ========== Handler 方法 ==========
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
@@ -62,11 +103,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 添加到最近访客
-	go func() {
-		_ = h.visitorDAO.DeleteByUserID(c.Request.Context(), user.ID)
-		_ = h.visitorDAO.Create(c.Request.Context(), user.ID)
-	}()
+	// 添加到最近访客（使用独立 context，避免请求结束后 context 被取消）
+	go func(userID primitive.ObjectID) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = h.visitorService.RecordVisit(ctx, userID)
+	}(user.ID)
 
 	c.JSON(200, gin.H{
 		"code":          0,
@@ -76,10 +118,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"expires_in":    tokenPair.ExpiresIn,
 		"user_info":     user.ToResponse(),
 	})
-}
-
-type LogoutRequest struct {
-	RefreshToken string `json:"refresh_token"`
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
@@ -92,10 +130,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		"code": 0,
 		"msg":  "退出登陆成功",
 	})
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
@@ -120,13 +154,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
-type RegisterRequest struct {
-	UserName    string `json:"user_name" binding:"required"`
-	Password    string `json:"password" binding:"required"`
-	CaptchaCode string `json:"captcha_code" binding:"required"`
-	CaptchaID   string `json:"captcha_id" binding:"required"`
-}
-
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,7 +161,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 验证验证码
 	if !h.captchaService.Verify(req.CaptchaID, req.CaptchaCode) {
 		Error(c, 2, "验证码错误")
 		return
@@ -173,11 +199,6 @@ func (h *AuthHandler) GetCaptcha(c *gin.Context) {
 	})
 }
 
-type CheckCaptchaRequest struct {
-	CaptchaCode string `json:"captcha_code" binding:"required"`
-	CaptchaID   string `json:"captcha_id" binding:"required"`
-}
-
 func (h *AuthHandler) CheckCaptcha(c *gin.Context) {
 	var req CheckCaptchaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -185,7 +206,6 @@ func (h *AuthHandler) CheckCaptcha(c *gin.Context) {
 		return
 	}
 
-	// 只验证不清除
 	answer := h.captchaService.Get(req.CaptchaID)
 	if answer == "" || answer != req.CaptchaCode {
 		Error(c, 1, "验证失败")

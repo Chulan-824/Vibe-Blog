@@ -59,3 +59,6 @@ func (s *CaptchaService) Verify(id, answer string) bool {
 func (s *CaptchaService) Get(id string) string {
 	return s.store.Get(id, false)
 }
+
+// 编译时接口断言
+var _ CaptchaServiceInterface = (*CaptchaService)(nil)
