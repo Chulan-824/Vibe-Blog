@@ -22,21 +22,21 @@ func NewVisitorDAO() *VisitorDAO {
 	}
 }
 
-func (d *VisitorDAO) DeleteByUserID(ctx context.Context, userID primitive.ObjectID) error {
-	_, err := d.collection.DeleteMany(ctx, bson.M{"user_id": userID})
+func (vd *VisitorDAO) DeleteByUserID(ctx context.Context, userID primitive.ObjectID) error {
+	_, err := vd.collection.DeleteMany(ctx, bson.M{"user_id": userID})
 	return err
 }
 
-func (d *VisitorDAO) Create(ctx context.Context, userID primitive.ObjectID) error {
+func (vd *VisitorDAO) Create(ctx context.Context, userID primitive.ObjectID) error {
 	visitor := &model.Visitor{
 		UserID:    userID,
 		VisitedAt: time.Now(),
 	}
-	_, err := d.collection.InsertOne(ctx, visitor)
+	_, err := vd.collection.InsertOne(ctx, visitor)
 	return err
 }
 
-func (d *VisitorDAO) FindListWithUser(ctx context.Context, limit int64) ([]model.VisitorWithUser, error) {
+func (vd *VisitorDAO) FindListWithUser(ctx context.Context, limit int64) ([]model.VisitorWithUser, error) {
 	pipeline := mongo.Pipeline{
 		{{Key: "$sort", Value: bson.M{"visited_at": -1}}},
 		{{Key: "$limit", Value: limit}},
@@ -58,7 +58,7 @@ func (d *VisitorDAO) FindListWithUser(ctx context.Context, limit int64) ([]model
 		}}},
 	}
 
-	cursor, err := d.collection.Aggregate(ctx, pipeline, options.Aggregate())
+	cursor, err := vd.collection.Aggregate(ctx, pipeline, options.Aggregate())
 	if err != nil {
 		return nil, err
 	}

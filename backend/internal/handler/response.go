@@ -47,6 +47,40 @@ func Created(c *gin.Context, msg string, data interface{}) {
 	})
 }
 
+// SuccessList 列表类响应 - data 中包含 list 字段
+func SuccessList(c *gin.Context, list interface{}) {
+	// 确保 list 为 nil 时返回空数组
+	if list == nil {
+		list = []interface{}{}
+	}
+	c.JSON(http.StatusOK, Response{
+		Code: apperrors.CodeSuccess,
+		Msg:  "请求成功",
+		Data: gin.H{"list": list},
+	})
+}
+
+// SuccessListWithMsg 列表类响应带自定义消息
+func SuccessListWithMsg(c *gin.Context, msg string, list interface{}) {
+	if list == nil {
+		list = []interface{}{}
+	}
+	c.JSON(http.StatusOK, Response{
+		Code: apperrors.CodeSuccess,
+		Msg:  msg,
+		Data: gin.H{"list": list},
+	})
+}
+
+// SuccessEmpty 空对象响应 - data 返回空对象 {}
+func SuccessEmpty(c *gin.Context, msg string) {
+	c.JSON(http.StatusOK, Response{
+		Code: apperrors.CodeSuccess,
+		Msg:  msg,
+		Data: gin.H{},
+	})
+}
+
 // ========== 错误响应（使用正确的 HTTP 状态码） ==========
 
 // BadRequest 400 - 请求参数错误
@@ -96,6 +130,23 @@ func Error(c *gin.Context, code int, msg string) {
 	c.JSON(http.StatusOK, Response{
 		Code: code,
 		Msg:  msg,
+	})
+}
+
+// ErrorWithData 旧版错误响应带空数据 - 保持向后兼容
+func ErrorWithData(c *gin.Context, code int, msg string) {
+	c.JSON(http.StatusOK, gin.H{
+		"code": code,
+		"msg":  msg,
+		"data": []interface{}{},
+	})
+}
+
+// SuccessLegacy 旧版成功响应 - 只返回 code 和 data
+func SuccessLegacy(c *gin.Context, data interface{}) {
+	c.JSON(http.StatusOK, gin.H{
+		"code": apperrors.CodeSuccess,
+		"data": data,
 	})
 }
 

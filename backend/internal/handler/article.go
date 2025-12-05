@@ -4,7 +4,6 @@ import (
 	apperrors "backend/internal/errors"
 	"backend/internal/service"
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -64,23 +63,23 @@ func NewArticleHandlerWithService(svc service.ArticleServiceInterface) *ArticleH
 func (h *ArticleHandler) GetArticle(c *gin.Context) {
 	idStr := c.Param("id")
 	if idStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "请传入要查询的文章id"})
+		BadRequest(c, "请传入要查询的文章id")
 		return
 	}
 
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "无效的文章id"})
+		BadRequest(c, "无效的文章id")
 		return
 	}
 
 	article, err := h.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		if apperrors.IsNotFound(err) {
-			c.JSON(http.StatusNotFound, gin.H{"code": apperrors.CodeNotFound, "msg": "没有对应的文章"})
+			NotFound(c, "没有对应的文章")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误"})
+		ServerError(c)
 		return
 	}
 
@@ -91,7 +90,7 @@ func (h *ArticleHandler) GetArticle(c *gin.Context) {
 		h.service.IncrementPageViews(ctx, articleID)
 	}(id)
 
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "查询成功", "data": article})
+	SuccessWithData(c, "查询成功", article)
 }
 
 // Extend GET /api/v1/articles/extend?tag=xxx
@@ -99,20 +98,20 @@ func (h *ArticleHandler) Extend(c *gin.Context) {
 	tag := c.Query("tag")
 	articles, err := h.service.GetExtend(c.Request.Context(), tag, 2)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器异常", "data": []interface{}{}})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "查询成功", "data": articles})
+	SuccessListWithMsg(c, "查询成功", articles)
 }
 
 // GetInfo GET /api/v1/articles/info
 func (h *ArticleHandler) GetInfo(c *gin.Context) {
 	info, err := h.service.GetInfo(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误", "data": nil})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "请求成功", "data": info})
+	SuccessWithData(c, "请求成功", info)
 }
 
 // GetHot GET /api/v1/articles/hot?limit=8
@@ -124,10 +123,10 @@ func (h *ArticleHandler) GetHot(c *gin.Context) {
 
 	articles, err := h.service.GetHot(c.Request.Context(), limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误", "data": nil})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "data": articles})
+	SuccessList(c, articles)
 }
 
 // GetShow GET /api/v1/articles?skip=0&limit=10&tag=xxx
@@ -145,26 +144,26 @@ func (h *ArticleHandler) GetShow(c *gin.Context) {
 
 	articles, err := h.service.GetList(c.Request.Context(), tag, skip, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误"})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "data": articles})
+	SuccessList(c, articles)
 }
 
 // Search GET /api/v1/articles/search?q=xxx
 func (h *ArticleHandler) Search(c *gin.Context) {
 	keywords := c.Query("q")
 	if keywords == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "请传入关键词参数", "data": []interface{}{}})
+		BadRequest(c, "请传入关键词参数")
 		return
 	}
 
 	articles, err := h.service.Search(c.Request.Context(), keywords, 5)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器异常", "data": []interface{}{}})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "查询成功", "data": articles})
+	SuccessListWithMsg(c, "查询成功", articles)
 }
 
 // ========== Legacy API (旧版兼容) ==========
@@ -207,7 +206,7 @@ func (h *ArticleHandler) ExtendLegacy(c *gin.Context) {
 
 	articles, err := h.service.GetExtend(c.Request.Context(), req.Tag, 2)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器异常~", "data": []interface{}{}})
+		ErrorWithData(c, 4, "服务器异常~")
 		return
 	}
 	SuccessWithData(c, "查询成功", articles)
@@ -217,7 +216,7 @@ func (h *ArticleHandler) ExtendLegacy(c *gin.Context) {
 func (h *ArticleHandler) GetInfoLegacy(c *gin.Context) {
 	info, err := h.service.GetInfo(c.Request.Context())
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器错误", "data": nil})
+		Error(c, 4, "服务器错误")
 		return
 	}
 	SuccessWithData(c, "请求成功", info)
@@ -232,10 +231,10 @@ func (h *ArticleHandler) GetHotLegacy(c *gin.Context) {
 
 	articles, err := h.service.GetHot(c.Request.Context(), req.Limit)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器错误", "data": nil})
+		Error(c, 4, "服务器错误")
 		return
 	}
-	c.JSON(200, gin.H{"code": 0, "data": articles})
+	SuccessLegacy(c, articles)
 }
 
 // GetShowLegacy POST /article/getShow (旧版)
@@ -249,23 +248,23 @@ func (h *ArticleHandler) GetShowLegacy(c *gin.Context) {
 
 	articles, err := h.service.GetList(c.Request.Context(), req.Tag, req.Skip, req.Limit)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器错误"})
+		Error(c, 4, "服务器错误")
 		return
 	}
-	c.JSON(200, gin.H{"code": 0, "data": articles})
+	SuccessLegacy(c, articles)
 }
 
 // SearchLegacy POST /article/search (旧版)
 func (h *ArticleHandler) SearchLegacy(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(200, gin.H{"code": 1, "msg": "请传入关键词参数", "data": []interface{}{}})
+		ErrorWithData(c, 1, "请传入关键词参数")
 		return
 	}
 
 	articles, err := h.service.Search(c.Request.Context(), req.Keywords, 5)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器异常~", "data": []interface{}{}})
+		ErrorWithData(c, 4, "服务器异常~")
 		return
 	}
 	SuccessWithData(c, "查询成功", articles)

@@ -1,10 +1,8 @@
 package handler
 
 import (
-	apperrors "backend/internal/errors"
 	"backend/internal/middleware"
 	"backend/internal/service"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -62,56 +60,56 @@ func NewMessageHandlerWithService(svc service.MessageServiceInterface) *MessageH
 func (h *MessageHandler) Commit(c *gin.Context) {
 	var req CommitMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "数据格式错误"})
+		BadRequest(c, "数据格式错误")
 		return
 	}
 
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": apperrors.CodeUnauthorized, "msg": "请先登录"})
+		Unauthorized(c, "请先登录")
 		return
 	}
 
 	if err := h.service.Create(c.Request.Context(), userID, req.Content); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误"})
+		ServerError(c)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"code": apperrors.CodeSuccess, "msg": "留言成功!"})
+	Created(c, "留言成功!", nil)
 }
 
 // ReplyCommit POST /api/v1/messages/:id/replies
 func (h *MessageHandler) ReplyCommit(c *gin.Context) {
 	var req ReplyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "数据格式错误"})
+		BadRequest(c, "数据格式错误")
 		return
 	}
 
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"code": apperrors.CodeUnauthorized, "msg": "请先登录"})
+		Unauthorized(c, "请先登录")
 		return
 	}
 
 	parentID, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"code": apperrors.CodeInvalidParams, "msg": "无效的留言ID"})
+		BadRequest(c, "无效的留言ID")
 		return
 	}
 
 	parent, err := h.service.GetByID(c.Request.Context(), parentID)
 	if err != nil || parent == nil {
-		c.JSON(http.StatusNotFound, gin.H{"code": apperrors.CodeNotFound, "msg": "该条留言已删除…"})
+		NotFound(c, "该条留言已删除…")
 		return
 	}
 
 	if err := h.service.AddReply(c.Request.Context(), parentID, userID, req.Content, req.ReplyToUser); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误"})
+		ServerError(c)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"code": apperrors.CodeSuccess, "msg": "评论成功！"})
+	Created(c, "评论成功！", nil)
 }
 
 // GetList GET /api/v1/messages?skip=0&limit=10
@@ -128,11 +126,11 @@ func (h *MessageHandler) GetList(c *gin.Context) {
 
 	messages, err := h.service.GetListWithUser(c.Request.Context(), skip, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器错误", "data": []interface{}{}})
+		ServerError(c)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "请求成功", "data": messages})
+	SuccessList(c, messages)
 }
 
 // ========== Legacy API (旧版兼容) ==========
@@ -204,7 +202,7 @@ func (h *MessageHandler) GetListLegacy(c *gin.Context) {
 
 	messages, err := h.service.GetListWithUser(c.Request.Context(), req.Skip, req.Limit)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器错误", "data": []interface{}{}})
+		ErrorWithData(c, 4, "服务器错误")
 		return
 	}
 

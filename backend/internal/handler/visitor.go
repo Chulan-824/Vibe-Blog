@@ -1,9 +1,7 @@
 package handler
 
 import (
-	apperrors "backend/internal/errors"
 	"backend/internal/service"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,10 +29,10 @@ func NewVisitorHandlerWithService(svc service.VisitorServiceInterface) *VisitorH
 func (h *VisitorHandler) GetList(c *gin.Context) {
 	visitors, err := h.service.GetListWithUser(c.Request.Context(), 12)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"code": apperrors.CodeServerError, "msg": "服务器异常", "data": []interface{}{}})
+		ServerError(c)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": apperrors.CodeSuccess, "msg": "请求成功", "data": visitors})
+	SuccessList(c, visitors)
 }
 
 // ========== Legacy API (旧版兼容) ==========
@@ -43,7 +41,7 @@ func (h *VisitorHandler) GetList(c *gin.Context) {
 func (h *VisitorHandler) GetListLegacy(c *gin.Context) {
 	visitors, err := h.service.GetListWithUser(c.Request.Context(), 12)
 	if err != nil {
-		c.JSON(200, gin.H{"code": 4, "msg": "服务器异常", "data": []interface{}{}})
+		ErrorWithData(c, 4, "服务器异常")
 		return
 	}
 	SuccessWithData(c, "请求成功", visitors)

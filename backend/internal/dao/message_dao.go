@@ -22,34 +22,34 @@ func NewMessageDAO() *MessageDAO {
 	}
 }
 
-func (d *MessageDAO) Create(ctx context.Context, userID primitive.ObjectID, content string) error {
+func (md *MessageDAO) Create(ctx context.Context, userID primitive.ObjectID, content string) error {
 	msg := &model.Message{
 		UserID:    userID,
 		Content:   content,
 		CreatedAt: time.Now(),
 		Replies:   []model.ReplyMessage{},
 	}
-	_, err := d.collection.InsertOne(ctx, msg)
+	_, err := md.collection.InsertOne(ctx, msg)
 	return err
 }
 
-func (d *MessageDAO) FindByID(ctx context.Context, id primitive.ObjectID) (*model.Message, error) {
+func (md *MessageDAO) FindByID(ctx context.Context, id primitive.ObjectID) (*model.Message, error) {
 	var msg model.Message
-	err := d.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&msg)
+	err := md.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&msg)
 	if err != nil {
 		return nil, err
 	}
 	return &msg, nil
 }
 
-func (d *MessageDAO) AddReplyMessage(ctx context.Context, parentID, userID primitive.ObjectID, content, replyToUser string) error {
+func (md *MessageDAO) AddReplyMessage(ctx context.Context, parentID, userID primitive.ObjectID, content, replyToUser string) error {
 	reply := model.ReplyMessage{
 		UserID:      userID,
 		Content:     content,
 		ReplyToUser: replyToUser,
 		CreatedAt:   time.Now(),
 	}
-	_, err := d.collection.UpdateOne(
+	_, err := md.collection.UpdateOne(
 		ctx,
 		bson.M{"_id": parentID},
 		bson.M{"$push": bson.M{"replies": reply}},
@@ -57,7 +57,7 @@ func (d *MessageDAO) AddReplyMessage(ctx context.Context, parentID, userID primi
 	return err
 }
 
-func (d *MessageDAO) FindListWithUser(ctx context.Context, skip, limit int64) ([]model.MessageWithUser, error) {
+func (md *MessageDAO) FindListWithUser(ctx context.Context, skip, limit int64) ([]model.MessageWithUser, error) {
 	pipeline := mongo.Pipeline{
 		{{Key: "$sort", Value: bson.M{"created_at": -1}}},
 		{{Key: "$skip", Value: skip}},
@@ -120,7 +120,7 @@ func (d *MessageDAO) FindListWithUser(ctx context.Context, skip, limit int64) ([
 		}}},
 	}
 
-	cursor, err := d.collection.Aggregate(ctx, pipeline, options.Aggregate())
+	cursor, err := md.collection.Aggregate(ctx, pipeline, options.Aggregate())
 	if err != nil {
 		return nil, err
 	}

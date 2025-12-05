@@ -177,8 +177,9 @@ func TestArticleHandler_GetHot_Success(t *testing.T) {
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	data := response["data"].([]interface{})
-	if len(data) != 2 {
-		t.Errorf("期望返回 2 篇文章, 实际 %d", len(data))
+	data := response["data"].(map[string]interface{})
+	list := data["list"].([]interface{})
+	if len(list) != 2 {
+		t.Errorf("期望返回 2 篇文章, 实际 %d", len(list))
 	}
 }

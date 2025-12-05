@@ -23,27 +23,27 @@ func NewArticleDAO() *ArticleDAO {
 	}
 }
 
-func (d *ArticleDAO) FindByID(ctx context.Context, id primitive.ObjectID) (*model.Article, error) {
+func (ad *ArticleDAO) FindByID(ctx context.Context, id primitive.ObjectID) (*model.Article, error) {
 	var article model.Article
-	err := d.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&article)
+	err := ad.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&article)
 	if err != nil {
 		return nil, err
 	}
 	return &article, nil
 }
 
-func (d *ArticleDAO) IncrementPageViews(ctx context.Context, id primitive.ObjectID) error {
-	_, err := d.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$inc": bson.M{"page_views": 1}})
+func (ad *ArticleDAO) IncrementPageViews(ctx context.Context, id primitive.ObjectID) error {
+	_, err := ad.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$inc": bson.M{"page_views": 1}})
 	return err
 }
 
-func (d *ArticleDAO) FindExtend(ctx context.Context, tag string, limit int64) ([]model.ArticleBrief, error) {
+func (ad *ArticleDAO) FindExtend(ctx context.Context, tag string, limit int64) ([]model.ArticleBrief, error) {
 	opts := options.Find().
 		SetProjection(bson.M{"_id": 1, "title": 1}).
 		SetSort(bson.M{"page_views": -1}).
 		SetLimit(limit)
 
-	cursor, err := d.collection.Find(ctx, bson.M{"tag": tag}, opts)
+	cursor, err := ad.collection.Find(ctx, bson.M{"tag": tag}, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -56,21 +56,21 @@ func (d *ArticleDAO) FindExtend(ctx context.Context, tag string, limit int64) ([
 	return articles, nil
 }
 
-func (d *ArticleDAO) GetInfo(ctx context.Context) (*model.ArticleInfo, error) {
+func (ad *ArticleDAO) GetInfo(ctx context.Context) (*model.ArticleInfo, error) {
 	var info model.ArticleInfo
-	err := d.infoCollection.FindOne(ctx, bson.M{}).Decode(&info)
+	err := ad.infoCollection.FindOne(ctx, bson.M{}).Decode(&info)
 	if err != nil {
 		return nil, err
 	}
 	return &info, nil
 }
 
-func (d *ArticleDAO) FindHot(ctx context.Context, limit int64) ([]model.Article, error) {
+func (ad *ArticleDAO) FindHot(ctx context.Context, limit int64) ([]model.Article, error) {
 	opts := options.Find().
 		SetSort(bson.M{"page_views": -1}).
 		SetLimit(limit)
 
-	cursor, err := d.collection.Find(ctx, bson.M{}, opts)
+	cursor, err := ad.collection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (d *ArticleDAO) FindHot(ctx context.Context, limit int64) ([]model.Article,
 	return articles, nil
 }
 
-func (d *ArticleDAO) FindList(ctx context.Context, tag string, skip, limit int64) ([]model.Article, error) {
+func (ad *ArticleDAO) FindList(ctx context.Context, tag string, skip, limit int64) ([]model.Article, error) {
 	filter := bson.M{}
 	if tag != "" {
 		filter["tag"] = tag
@@ -94,7 +94,7 @@ func (d *ArticleDAO) FindList(ctx context.Context, tag string, skip, limit int64
 		SetSkip(skip).
 		SetLimit(limit)
 
-	cursor, err := d.collection.Find(ctx, filter, opts)
+	cursor, err := ad.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (d *ArticleDAO) FindList(ctx context.Context, tag string, skip, limit int64
 	return articles, nil
 }
 
-func (d *ArticleDAO) Search(ctx context.Context, keywords string, limit int64) ([]model.ArticleBrief, error) {
+func (ad *ArticleDAO) Search(ctx context.Context, keywords string, limit int64) ([]model.ArticleBrief, error) {
 	filter := bson.M{
 		"$or": []bson.M{
 			{"title": bson.M{"$regex": keywords, "$options": "i"}},
@@ -120,7 +120,7 @@ func (d *ArticleDAO) Search(ctx context.Context, keywords string, limit int64) (
 		SetSort(bson.M{"page_views": -1}).
 		SetLimit(limit)
 
-	cursor, err := d.collection.Find(ctx, filter, opts)
+	cursor, err := ad.collection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

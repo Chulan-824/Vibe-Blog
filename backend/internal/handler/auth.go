@@ -110,9 +110,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		_ = h.visitorService.RecordVisit(ctx, userID)
 	}(user.ID)
 
-	c.JSON(200, gin.H{
-		"code":          0,
-		"msg":           "登录成功",
+	SuccessWithData(c, "登录成功", gin.H{
 		"access_token":  tokenPair.AccessToken,
 		"refresh_token": tokenPair.RefreshToken,
 		"expires_in":    tokenPair.ExpiresIn,
@@ -126,10 +124,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		_ = h.authService.RevokeRefreshToken(c.Request.Context(), req.RefreshToken)
 	}
 
-	c.JSON(200, gin.H{
-		"code": 0,
-		"msg":  "退出登陆成功",
-	})
+	SuccessWithMsg(c, "退出登陆成功")
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
@@ -145,9 +140,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"code":          0,
-		"msg":           "刷新成功",
+	SuccessWithData(c, "刷新成功", gin.H{
 		"access_token":  tokenPair.AccessToken,
 		"refresh_token": tokenPair.RefreshToken,
 		"expires_in":    tokenPair.ExpiresIn,
@@ -191,11 +184,10 @@ func (h *AuthHandler) GetCaptcha(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"code":       0,
-		"data":       result.Data,
-		"captcha_id": result.ID,
-		"time":       60000,
+	Success(c, gin.H{
+		"captcha_data": result.Data,
+		"captcha_id":   result.ID,
+		"time":         60000,
 	})
 }
 
