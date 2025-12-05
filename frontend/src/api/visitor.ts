@@ -1,4 +1,5 @@
 import { request } from './index'
+import type { ListResponse } from '@/types/api'
 
 export interface Visitor {
   _id: string
@@ -8,9 +9,11 @@ export interface Visitor {
     _id: string
     user: string
     photo?: string
+    avatar?: string
+    user_name?: string
   }
 }
 
 export const getVisitor = () => {
-  return request<Visitor[]>('/visitor', { method: 'POST' })
+  return request<ListResponse<Visitor>>('/visitors', { method: 'GET' })
 }

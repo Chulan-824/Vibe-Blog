@@ -1,6 +1,7 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { ToastContext } from '@/contexts/ToastContext'
+import { Button } from '@/components/ui/button'
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -64,12 +65,14 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     >
       {icons[toast.type]}
       <span className="text-sm text-gray-700">{toast.message}</span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onClose}
-        className="ml-2 p-1 hover:bg-black/5 rounded transition-colors"
+        className="ml-2"
       >
         <X className="h-4 w-4 text-gray-400" />
-      </button>
+      </Button>
     </div>
   )
 }

@@ -33,7 +33,7 @@ export function ArticleList({ tagIndex }: ArticleListProps) {
 
       try {
         const res = await getArticleShow({ skip: currentSkip, limit, tag })
-        const data = res.data || []
+        const data = res.data?.list || []
 
         if (reset) {
           setArticles(data)
@@ -65,7 +65,7 @@ export function ArticleList({ tagIndex }: ArticleListProps) {
 
     const tag = TAGS[tagIndex] || ''
     getArticleShow({ skip: 0, limit, tag }).then((res) => {
-      const data = res.data || []
+      const data = res.data?.list || []
       setArticles(data)
       setSkip(limit)
       setNoMore(data.length < limit)

@@ -4,11 +4,15 @@ export interface ApiResponse<T = unknown> {
   data?: T
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  total?: number
+// 列表类接口响应格式
+export interface ListResponse<T> {
+  code?: number
+  msg?: string
+  data?: {
+    list: T[]
+  }
 }
 
-export interface VCodeResponse extends ApiResponse {
-  data?: string
-  time?: number
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  total?: number
 }

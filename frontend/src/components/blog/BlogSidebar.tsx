@@ -4,6 +4,7 @@ import { Search } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { getArticleInfo, getArticleHot, searchArticle } from '@/api/article'
 import { getVisitor } from '@/api/visitor'
+import { Button } from '@/components/ui/button'
 
 interface BlogSidebarProps {
   currentTag: number
@@ -32,7 +33,7 @@ export function BlogSidebar({ currentTag, onTagChange }: BlogSidebarProps) {
   })
 
   const tags = ['全部文章', ...(articleInfo?.data?.tags || [])]
-  const recommend = hotArticles?.data?.[0]
+  const recommend = hotArticles?.data?.list?.[0]
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,7 +54,7 @@ export function BlogSidebar({ currentTag, onTagChange }: BlogSidebarProps) {
       if (keywords) {
         try {
           const res = await searchArticle(keywords)
-          setSearchResults(res.data || [])
+          setSearchResults(res.data?.list || [])
         } catch {
           setSearchResults([])
         }
@@ -109,12 +110,13 @@ export function BlogSidebar({ currentTag, onTagChange }: BlogSidebarProps) {
                 className="relative z-[1] box-border h-10 w-full leading-10"
                 onMouseEnter={() => setHoverIndex(index)}
               >
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => onTagChange(index)}
-                  className="block h-full w-full border-b border-dotted border-gray-200 px-8 text-left text-[#787977]"
+                  className="block h-full w-full justify-start rounded-none border-b border-dotted border-gray-200 px-8 text-left text-[#787977]"
                 >
                   {tag}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -131,7 +133,7 @@ export function BlogSidebar({ currentTag, onTagChange }: BlogSidebarProps) {
           热门文章
         </h3>
         <ul className="mt-4">
-          {hotArticles?.data?.slice(0, 8).map((item, index) => (
+          {hotArticles?.data?.list?.slice(0, 8).map((item, index) => (
             <li key={item._id} className="my-2 h-8 overflow-hidden leading-8">
               <i
                 className={`mr-2.5 inline-block h-5.5 w-5.5 rounded-full text-center text-xs leading-5.5 ${
@@ -187,14 +189,14 @@ export function BlogSidebar({ currentTag, onTagChange }: BlogSidebarProps) {
           最近访客
         </h3>
         <ul className="mt-2.5 flex flex-wrap after:clear-both after:block after:h-0 after:w-0 after:content-['']">
-          {visitors?.data?.slice(0, 8).map((item) => (
+          {visitors?.data?.list?.slice(0, 8).map((item) => (
             <li
               key={item._id}
               className="relative m-[1%] h-15 w-[23%] bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url(${item.user?.photo})` }}
+              style={{ backgroundImage: `url(${item.user?.avatar})` }}
             >
               <p className="absolute bottom-0 left-0 h-5 w-full truncate bg-black/30 text-center text-xs leading-5 text-white">
-                {item.user?.user}
+                {item.user?.user_name}
               </p>
             </li>
           ))}

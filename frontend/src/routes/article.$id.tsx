@@ -24,7 +24,7 @@ function Article() {
   const { id } = Route.useParams()
 
   const {
-    data: article,
+    data: articleRes,
     isLoading,
     error,
   } = useQuery({
@@ -32,11 +32,15 @@ function Article() {
     queryFn: () => getArticleById(id),
   })
 
-  const { data: extendList } = useQuery({
+  const article = articleRes?.data
+
+  const { data: extendRes } = useQuery({
     queryKey: ['article-extend', article?.tag],
     queryFn: () => getArticleExtend(article!.tag),
     enabled: !!article?.tag,
   })
+
+  const extendList = extendRes?.data?.list
 
   if (isLoading) {
     return (

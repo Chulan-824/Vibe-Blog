@@ -19,13 +19,10 @@ export interface ChildMessage {
 }
 
 export interface MessageParams {
-  user: string
   content: string
 }
 
 export interface ChildMessageParams {
-  parentId: string
-  user: string
   content: string
-  reUser: string
+  reply_to_user: string
 }
