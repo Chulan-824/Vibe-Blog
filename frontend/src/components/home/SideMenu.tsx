@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button'
 
 interface SideMenuProps {
   open: boolean
@@ -9,9 +10,11 @@ export function SideMenu({ open, onToggle }: SideMenuProps) {
   return (
     <>
       {/* Hamburger Button */}
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onToggle}
-        className={`fixed right-14 top-10 z-[999] flex h-10 w-10 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-full transition-colors ${
+        className={`fixed right-14 top-10 z-[999] flex h-10 w-10 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-full ${
           open ? 'bg-black/10' : 'bg-transparent hover:bg-[#6bc30d]'
         }`}
       >
@@ -30,7 +33,7 @@ export function SideMenu({ open, onToggle }: SideMenuProps) {
             open ? 'opacity-0' : ''
           }`}
         />
-      </button>
+      </Button>
 
       {/* Overlay */}
       <div

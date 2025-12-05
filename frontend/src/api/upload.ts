@@ -1,4 +1,4 @@
-const UPLOAD_BASE_URL = 'http://47.96.127.142:80'
+const UPLOAD_BASE_URL = import.meta.env.VITE_UPLOAD_BASE_URL || '/api/v1'
 
 export const uploadAvatar = async (file: File): Promise<{ success: boolean; url?: string }> => {
   const formData = new FormData()

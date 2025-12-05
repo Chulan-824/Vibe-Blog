@@ -1,18 +1,11 @@
 import { createRootRoute, Outlet, Link } from '@tanstack/react-router'
 import notFoundImg from '@/assets/404.gif'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Nav } from '@/components/Nav'
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-      retry: 1,
-    },
-  },
-})
+import { ToastProvider } from '@/components/ui/Toast'
+import { queryClient } from '@/lib/queryClient'
 
 function NotFoundComponent() {
   return (
@@ -31,10 +24,12 @@ function NotFoundComponent() {
 export const Route = createRootRoute({
   component: () => (
     <QueryClientProvider client={queryClient}>
-      <Nav />
-      <main className="min-h-screen pt-[60px]">
-        <Outlet />
-      </main>
+      <ToastProvider>
+        <Nav />
+        <main className="min-h-screen pt-[60px]">
+          <Outlet />
+        </main>
+      </ToastProvider>
       <ReactQueryDevtools initialIsOpen={false} />
       <TanStackRouterDevtools />
     </QueryClientProvider>

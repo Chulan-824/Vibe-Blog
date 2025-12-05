@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/hooks/useToast'
 import { Login } from './Login'
 import { Register } from './Register'
 import { AvatarUpload } from './AvatarUpload'
+import { Button } from '@/components/ui/button'
 
 const navLinks = [
   { to: '/', label: '首页', name: 'Home' },
@@ -43,10 +45,12 @@ function UserPopover({
   user,
   onLogout,
   onAvatarClick,
+  toast,
 }: {
   user: { user: string; avatar?: string }
   onLogout: () => void
   onAvatarClick: () => void
+  toast: ReturnType<typeof useToast>
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -66,38 +70,44 @@ function UserPopover({
       await onLogout()
       window.location.reload()
     } catch {
-      alert('退出失败')
+      toast.error('退出失败')
     }
   }
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen(!open)}
-        className="w-10 h-10 rounded-full bg-cover bg-center bg-gray-200 cursor-pointer border-2 border-transparent hover:border-[#6bc30d] transition-colors"
+        className="w-10 h-10 rounded-full bg-cover bg-center bg-gray-200 cursor-pointer border-2 border-transparent hover:border-[#6bc30d]"
         style={{
           backgroundImage: user.avatar ? `url(${user.avatar})` : undefined,
         }}
-        title={user.user}
+        title={user.user_name}
       />
       {open && (
         <div className="absolute right-0 top-12 bg-white rounded-lg shadow-lg border p-4 min-w-[120px] z-50">
-          <p className="text-sm text-gray-600 mb-3">欢迎登录：{user.user}</p>
-          <button
+          <p className="text-sm text-gray-600 mb-3">欢迎登录：{user.user_name}</p>
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleLogout}
-            className="w-full px-3 py-1.5 text-sm text-red-500 border border-red-500 rounded hover:bg-red-50 transition-colors"
+            className="w-full"
           >
             退出登录
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               setOpen(false)
               onAvatarClick()
             }}
-            className="w-full mt-2 px-3 py-1.5 text-sm text-blue-500 border border-blue-500 rounded hover:bg-blue-50 transition-colors"
+            className="w-full mt-2"
           >
             修改头像
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -106,6 +116,7 @@ function UserPopover({
 
 export function Nav() {
   const { user, isLoggedIn, logout } = useAuth()
+  const toast = useToast()
   const [showLogin, setShowLogin] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
   const [showAvatar, setShowAvatar] = useState(false)
@@ -124,21 +135,21 @@ export function Nav() {
           </ul>
           <div className="flex items-center gap-2">
             {isLoggedIn && user ? (
-              <UserPopover user={user} onLogout={logout} onAvatarClick={() => setShowAvatar(true)} />
+              <UserPopover user={user} onLogout={logout} onAvatarClick={() => setShowAvatar(true)} toast={toast} />
             ) : (
               <>
-                <button
+                <Button
+                  size="sm"
                   onClick={() => setShowLogin(true)}
-                  className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                 >
                   登录
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => setShowRegister(true)}
-                  className="px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                 >
                   注册
-                </button>
+                </Button>
               </>
             )}
           </div>

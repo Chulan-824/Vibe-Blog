@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { ChevronDown } from 'lucide-react'
 import heroBg from '@/assets/img/11.jpg'
+import { Button } from '@/components/ui/button'
 
 export function HeroSection() {
   const scrollToContent = () => {
@@ -30,12 +31,14 @@ export function HeroSection() {
           </Link>
         </div>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={scrollToContent}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex h-12 w-12 items-center justify-center rounded-full text-white transition-colors hover:bg-[#6bc30d]"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 h-12 w-12 rounded-full text-white hover:bg-[#6bc30d]"
       >
         <ChevronDown className="h-9 w-9" />
-      </button>
+      </Button>
     </section>
   )
 }

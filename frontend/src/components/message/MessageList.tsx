@@ -1,7 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getMessageList, commitChildMessage } from '@/api/message'
 import { useAuth } from '@/hooks/useAuth'
+import { useToast } from '@/hooks/useToast'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { sanitizeHtml } from '@/lib/sanitize'
+import { Button } from '@/components/ui/button'
 import type { Message } from '@/types/message'
 
 function formatTime(dateStr: string) {
@@ -19,43 +23,32 @@ interface ReplyState {
 
 export function MessageList() {
   const { user, isLoggedIn } = useAuth()
+  const toast = useToast()
   const [limit, setLimit] = useState(5)
   const [replyState, setReplyState] = useState<ReplyState | null>(null)
-  const loadingRef = useRef(false)
 
   const { data: messagesData, refetch } = useQuery({
     queryKey: ['messages', limit],
     queryFn: () => getMessageList(0, limit),
   })
 
-  const messages: Message[] = messagesData?.data || []
+  const messages: Message[] = messagesData?.data?.list || []
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (loadingRef.current) return
-      const scrollTop = document.documentElement.scrollTop
-      const clientHeight = document.documentElement.clientHeight
-      const scrollHeight = document.documentElement.scrollHeight
-
-      if (scrollTop + clientHeight >= scrollHeight - 200) {
-        loadingRef.current = true
-        setLimit((prev) => prev + 5)
-        setTimeout(() => {
-          loadingRef.current = false
-        }, 500)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+  const handleLoadMore = useCallback(() => {
+    setLimit((prev) => prev + 5)
   }, [])
+
+  useInfiniteScroll({
+    onLoadMore: handleLoadMore,
+    threshold: 200,
+  })
 
   const handleReplyClick = (parentIndex: number, childIndex?: number) => {
     const msg = messages[parentIndex]
     const reUser =
       childIndex !== undefined
-        ? msg.children?.[childIndex]?.user?.user || ''
-        : msg.user?.user || ''
+        ? msg.children?.[childIndex]?.user?.user_name || ''
+        : msg.user?.user_name || ''
 
     if (
       replyState?.parentIndex === parentIndex &&
@@ -69,28 +62,26 @@ export function MessageList() {
 
   const handleChildSubmit = async (parentIndex: number) => {
     if (!isLoggedIn || !user) {
-      alert('请先登录')
+      toast.error('请先登录')
       return
     }
     if (!replyState?.content.trim()) return
 
     const parentMsg = messages[parentIndex]
     try {
-      const res = await commitChildMessage({
-        parentId: parentMsg._id,
-        user: user._id,
+      const res = await commitChildMessage(parentMsg._id, {
         content: replyState.content,
-        reUser: replyState.reUser,
+        reply_to_user: replyState.reUser,
       })
       if (res.code) {
-        alert(res.msg || '评论失败')
+        toast.error(res.msg || '评论失败')
       } else {
-        alert('评论成功')
+        toast.success('评论成功')
         setReplyState(null)
         refetch()
       }
     } catch {
-      alert('服务器错误~请稍后再试')
+      toast.error('服务器错误~请稍后再试')
     }
   }
 
@@ -109,22 +100,24 @@ export function MessageList() {
           <div className="flex">
             <div
               className="h-11 w-11 shrink-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${item.user?.photo})` }}
+              style={{ backgroundImage: `url(${item.user?.avatar})` }}
             />
             <div className="ml-3 flex-1 border-b border-dotted border-gray-400 pb-5">
-              <div className="text-[#01aaed]">{item.user?.user}</div>
+              <div className="text-[#01aaed]">{item.user?.user_name}</div>
               <div
                 className="min-h-8 break-all py-1 text-xs"
-                dangerouslySetInnerHTML={{ __html: item.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.content) }}
               />
               <div className="text-xs text-gray-500">
                 <span className="px-4">{formatTime(item.date)}</span>
-                <button
+                <Button
+                  variant="link"
+                  size="sm"
                   onClick={() => handleReplyClick(index)}
-                  className="text-blue-600 hover:underline"
+                  className="h-auto p-0"
                 >
                   {isReplyOpen(index, undefined) ? '收起' : '回复'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -134,23 +127,25 @@ export function MessageList() {
             <div key={child.date + Math.random()} className="flex pl-12 pt-5">
               <div
                 className="h-11 w-11 shrink-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${child.user?.photo})` }}
+                style={{ backgroundImage: `url(${child.user?.avatar})` }}
               />
               <div className="ml-3 flex-1 text-xs">
                 <div>
-                  <span className="mx-1 text-[#01aaed]">{child.user?.user}</span>
+                  <span className="mx-1 text-[#01aaed]">{child.user?.user_name}</span>
                   回复
                   <span className="mx-1 text-[#01aaed]">{child.reUser}</span>
                   <span>{child.content}</span>
                 </div>
                 <div className="pl-5 pt-1 text-gray-500">
                   <span className="mr-2.5">{formatTime(child.date)}</span>
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => handleReplyClick(index, childIndex)}
-                    className="text-blue-600 hover:underline"
+                    className="h-auto p-0"
                   >
                     {isReplyOpen(index, childIndex) ? '收起' : '回复'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -172,12 +167,13 @@ export function MessageList() {
               placeholder={`回复【${replyState?.reUser || ''}】：`}
               className="box-border block h-15 w-full resize-none border border-gray-400 p-2.5"
             />
-            <button
+            <Button
+              size="sm"
               onClick={() => handleChildSubmit(index)}
-              className="mt-2 rounded bg-[#1E9FFF] px-3 py-1 text-xs text-white hover:bg-[#1a8fe6]"
+              className="mt-2"
             >
               提交
-            </button>
+            </Button>
           </div>
         </li>
       ))}

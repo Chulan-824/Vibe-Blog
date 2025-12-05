@@ -40,18 +40,7 @@ function About() {
         <div className="w-full bg-white">
           <article className="p-2.5">
             <Section title="关于我">
-              <p className="mx-0 my-6 pl-4 leading-7">
-                毕业后在长沙做在线教育课程顾问，很迷茫。2020年决定转行做开发，然沉迷撸码，日渐消瘦。
-              </p>
-              <span className="pl-4">可以通过以下方式联系到我：</span>
-              <ul className="pl-4">
-                <li className="leading-8">
-                  邮 箱 ：
-                  <a href="mailto:390226630@qq.com" className="text-[#0366d6]">
-                    390226630@qq.com
-                  </a>
-                </li>
-              </ul>
+              <p className="mx-0 my-6 pl-4 leading-7">沉迷撸码，日渐消瘦。</p>
             </Section>
 
             <Section title="关于本站">

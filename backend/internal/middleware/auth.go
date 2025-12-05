@@ -13,9 +13,23 @@ const (
 	ContextUserID = "userID"
 )
 
-func Auth() gin.HandlerFunc {
-	authService := service.NewAuthService()
+// 使用单例模式避免每次请求创建新实例
+var defaultAuthService service.AuthServiceInterface
 
+func getAuthService() service.AuthServiceInterface {
+	if defaultAuthService == nil {
+		defaultAuthService = service.NewAuthService()
+	}
+	return defaultAuthService
+}
+
+// Auth 认证中间件（使用默认 AuthService）
+func Auth() gin.HandlerFunc {
+	return AuthWithService(getAuthService())
+}
+
+// AuthWithService 认证中间件（依赖注入，用于测试）
+func AuthWithService(authService service.AuthServiceInterface) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

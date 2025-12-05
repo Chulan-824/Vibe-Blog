@@ -21,7 +21,7 @@ func NewTokenDAO() *TokenDAO {
 	}
 }
 
-func (d *TokenDAO) Create(ctx context.Context, userID primitive.ObjectID, token string, expiresAt time.Time) error {
+func (td *TokenDAO) Create(ctx context.Context, userID primitive.ObjectID, token string, expiresAt time.Time) error {
 	refreshToken := &model.RefreshToken{
 		UserID:    userID,
 		Token:     token,
@@ -29,13 +29,13 @@ func (d *TokenDAO) Create(ctx context.Context, userID primitive.ObjectID, token 
 		CreatedAt: time.Now(),
 		Revoked:   false,
 	}
-	_, err := d.collection.InsertOne(ctx, refreshToken)
+	_, err := td.collection.InsertOne(ctx, refreshToken)
 	return err
 }
 
-func (d *TokenDAO) FindByToken(ctx context.Context, token string) (*model.RefreshToken, error) {
+func (td *TokenDAO) FindByToken(ctx context.Context, token string) (*model.RefreshToken, error) {
 	var refreshToken model.RefreshToken
-	err := d.collection.FindOne(ctx, bson.M{
+	err := td.collection.FindOne(ctx, bson.M{
 		"token":   token,
 		"revoked": false,
 	}).Decode(&refreshToken)
@@ -45,8 +45,8 @@ func (d *TokenDAO) FindByToken(ctx context.Context, token string) (*model.Refres
 	return &refreshToken, nil
 }
 
-func (d *TokenDAO) Revoke(ctx context.Context, token string) error {
-	_, err := d.collection.UpdateOne(
+func (td *TokenDAO) Revoke(ctx context.Context, token string) error {
+	_, err := td.collection.UpdateOne(
 		ctx,
 		bson.M{"token": token},
 		bson.M{"$set": bson.M{"revoked": true}},
@@ -54,8 +54,8 @@ func (d *TokenDAO) Revoke(ctx context.Context, token string) error {
 	return err
 }
 
-func (d *TokenDAO) RevokeAllByUserID(ctx context.Context, userID primitive.ObjectID) error {
-	_, err := d.collection.UpdateMany(
+func (td *TokenDAO) RevokeAllByUserID(ctx context.Context, userID primitive.ObjectID) error {
+	_, err := td.collection.UpdateMany(
 		ctx,
 		bson.M{"user_id": userID},
 		bson.M{"$set": bson.M{"revoked": true}},
@@ -63,8 +63,8 @@ func (d *TokenDAO) RevokeAllByUserID(ctx context.Context, userID primitive.Objec
 	return err
 }
 
-func (d *TokenDAO) DeleteExpired(ctx context.Context) error {
-	_, err := d.collection.DeleteMany(ctx, bson.M{
+func (td *TokenDAO) DeleteExpired(ctx context.Context) error {
+	_, err := td.collection.DeleteMany(ctx, bson.M{
 		"expires_at": bson.M{"$lt": time.Now()},
 	})
 	return err

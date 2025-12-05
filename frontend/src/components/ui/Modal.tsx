@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface ModalProps {
   open: boolean
@@ -7,9 +8,10 @@ interface ModalProps {
   title: string
   children: ReactNode
   footer?: ReactNode
+  closeOnBackdropClick?: boolean
 }
 
-export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, closeOnBackdropClick = true }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   }, [onClose])
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === dialogRef.current) {
+    if (closeOnBackdropClick && e.target === dialogRef.current) {
       onClose()
     }
   }
@@ -51,12 +53,13 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       <div className="bg-white rounded-lg shadow-xl w-[400px] max-w-[90vw]">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-medium">{title}</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
-          </button>
+          </Button>
         </div>
         <div className="px-6 py-4">{children}</div>
         {footer && (

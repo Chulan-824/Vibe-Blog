@@ -25,7 +25,7 @@ function Home() {
     <div className="-mt-[60px] select-none">
       <HeroSection />
       <SideMenu open={menuOpen} onToggle={() => setMenuOpen(!menuOpen)} />
-      <HotArticles articles={hotArticles?.data} />
+      <HotArticles articles={hotArticles?.data?.list} />
       <AboutSection />
     </div>
   )

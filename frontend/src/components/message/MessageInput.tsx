@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { EmojiPicker } from './EmojiPicker'
+import { Button } from '@/components/ui/button'
 
 interface MessageInputProps {
   onSubmit: (content: string) => void
@@ -43,13 +44,12 @@ export function MessageInput({ onSubmit, disabled }: MessageInputProps) {
       />
       <div className="flex items-center justify-between mt-3">
         <EmojiPicker onSelect={insertEmoji} />
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={disabled || !content.trim()}
-          className="px-6 py-2 bg-[#1E9FFF] text-white rounded hover:bg-[#1a8fe6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           提交留言
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"backend/internal/config"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,7 +22,7 @@ func NewUser(username, password string) *User {
 		UserName:     username,
 		Password:     password,
 		RegisteredAt: time.Now().UnixMilli(),
-		Avatar:       "http://localhost:3000/img/default_avatar.jpeg",
+		Avatar:       config.AppConfig.GetDefaultAvatarURL(),
 		IsDisabled:   false,
 		IsAdmin:      false,
 	}

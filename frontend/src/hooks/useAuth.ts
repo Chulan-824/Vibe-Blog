@@ -1,6 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { checkLogin, login, logout, register, getVCode, checkVCode } from '@/api/auth'
-import type { LoginParams, RegisterParams, User } from '@/types/auth'
+import { login, logout, register, getCaptcha, checkCaptcha } from '@/api/auth'
+import type { LoginParams, RegisterParams, User, CheckCaptchaParams } from '@/types/auth'
+
+const AUTH_STORAGE_KEY = 'auth_user'
+const TOKEN_STORAGE_KEY = 'auth_tokens'
+
+interface StoredTokens {
+  access_token: string
+  refresh_token: string
+  expires_in: number
+}
+
+function getStoredUser(): User | null {
+  try {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+function setStoredUser(user: User | null) {
+  if (user) {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
+  } else {
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+  }
+}
+
+function setStoredTokens(tokens: StoredTokens | null) {
+  if (tokens) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens))
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+  }
+}
+
+function getStoredTokens(): StoredTokens | null {
+  try {
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
 
 export function useAuth() {
   const queryClient = useQueryClient()
@@ -8,12 +51,7 @@ export function useAuth() {
   const { data: user, isLoading } = useQuery({
     queryKey: ['auth', 'user'],
     queryFn: async () => {
-      try {
-        const res = await checkLogin()
-        return res.userInfo || null
-      } catch {
-        return null
-      }
+      return getStoredUser()
     },
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -21,14 +59,30 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: (params: LoginParams) => login(params),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'user'] })
+    onSuccess: (res) => {
+      const data = res.data
+      if (data?.user_info) {
+        setStoredUser(data.user_info)
+        queryClient.setQueryData(['auth', 'user'], data.user_info)
+      }
+      if (data?.access_token && data?.refresh_token) {
+        setStoredTokens({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_in: data.expires_in || 0,
+        })
+      }
     },
   })
 
   const logoutMutation = useMutation({
-    mutationFn: () => logout(),
+    mutationFn: () => {
+      const tokens = getStoredTokens()
+      return logout(tokens?.refresh_token)
+    },
     onSuccess: () => {
+      setStoredUser(null)
+      setStoredTokens(null)
       queryClient.setQueryData(['auth', 'user'], null)
     },
   })
@@ -50,27 +104,28 @@ export function useAuth() {
   }
 }
 
-export function useVCode(enabled = false) {
+export function useCaptcha(enabled = false) {
   const { data, dataUpdatedAt, refetch, isFetching } = useQuery({
-    queryKey: ['auth', 'vcode'],
-    queryFn: () => getVCode(),
+    queryKey: ['auth', 'captcha'],
+    queryFn: () => getCaptcha(),
     enabled,
     staleTime: 0,
     refetchOnWindowFocus: false,
   })
 
   const checkMutation = useMutation({
-    mutationFn: (code: string) => checkVCode(code),
+    mutationFn: (params: CheckCaptchaParams) => checkCaptcha(params),
   })
 
-  // Calculate expiration timestamp
-  const vcodeExpireTime = data?.time && dataUpdatedAt ? dataUpdatedAt + data.time : 0
+  const captchaData = data?.data
+  const captchaExpireTime = captchaData?.time && dataUpdatedAt ? dataUpdatedAt + captchaData.time : 0
 
   return {
-    vcode: data,
-    vcodeExpireTime,
-    refreshVCode: refetch,
+    captcha: captchaData,
+    captchaId: captchaData?.captcha_id,
+    captchaExpireTime,
+    refreshCaptcha: refetch,
     isRefreshing: isFetching,
-    checkVCode: checkMutation.mutateAsync,
+    checkCaptcha: checkMutation.mutateAsync,
   }
 }

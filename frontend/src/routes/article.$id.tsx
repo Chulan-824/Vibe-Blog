@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { getArticleById, getArticleExtend } from '@/api/article'
+import { sanitizeHtml } from '@/lib/sanitize'
 import notFoundImg from '@/assets/404.gif'
 
 export const Route = createFileRoute('/article/$id')({
@@ -23,7 +24,7 @@ function Article() {
   const { id } = Route.useParams()
 
   const {
-    data: article,
+    data: articleRes,
     isLoading,
     error,
   } = useQuery({
@@ -31,11 +32,15 @@ function Article() {
     queryFn: () => getArticleById(id),
   })
 
-  const { data: extendList } = useQuery({
+  const article = articleRes?.data
+
+  const { data: extendRes } = useQuery({
     queryKey: ['article-extend', article?.tag],
     queryFn: () => getArticleExtend(article!.tag),
     enabled: !!article?.tag,
   })
+
+  const extendList = extendRes?.data?.list
 
   if (isLoading) {
     return (
@@ -104,7 +109,7 @@ function Article() {
         {/* 内容区 */}
         <section
           className="border-b border-[#e1e2e0] pb-5 mt-5 min-h-[200px] leading-7 text-sm"
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }}
         />
 
         {/* 版权区 */}
